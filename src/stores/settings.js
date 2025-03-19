@@ -28,8 +28,8 @@ export const useSettingsStore = defineStore('settings', () => {
     if (isUsingDefaultKey.value) {
       // 使用默认 key 时只显示免费模型
       return availableModels.value.filter(model => 
-        model.name.toLowerCase().includes('free') || 
-        model.id.toLowerCase().includes('free')
+        model.name.toLowerCase().includes('(free)') || 
+        model.id.toLowerCase().includes('(free)')
       );
     }
     // 使用自定义 key 时显示所有模型
