@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const useSettingsStore = defineStore('settings', () => {
   // 添加默认 API Key 常量
-  const DEFAULT_API_KEY = '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';
+  const DEFAULT_API_KEY = '';
   
   // 状态
   const apiKey = ref(DEFAULT_API_KEY);
