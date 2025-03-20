@@ -10,7 +10,7 @@
           >
             <Bars3Icon class="h-6 w-6 text-apple-black" />
           </button>
-          <h1 class="text-2xl font-semibold text-apple-black">AI 聊天助手</h1>
+          <h1 class="text-2xl font-semibold text-apple-black">扯淡聊天助手</h1>
         </div>
         <router-link to="/settings" class="btn bg-transparent text-apple-blue border border-apple-blue hover:bg-apple-blue hover:text-white">
           设置
