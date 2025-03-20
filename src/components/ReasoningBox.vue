@@ -29,7 +29,7 @@
       ref="reasoningContent"
     >
       <div v-if="content" v-html="formatMarkdown(content)"></div>
-      <div v-else-if="isLoading" class="text-gray-500">AI正在思考中...</div>
+      <div v-else-if="isLoading" class="text-gray-500">AI正在烧烤中...</div>
       <div v-else class="text-gray-500">无推理内容</div>
     </div>
   </div>
