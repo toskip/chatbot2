@@ -330,18 +330,20 @@ const sendMessage = async () => {
   await chatStore.sendMessageToLLM(message);
 };
 
-// 滚动到底部
+// 修改滚动到底部的函数
 const scrollToBottom = () => {
   if (chatContainer.value) {
-    const scrollOptions = {
-      top: chatContainer.value.scrollHeight,
-      behavior: 'smooth'
-    };
-    chatContainer.value.scrollTo(scrollOptions);
+    // 使用 requestAnimationFrame 确保在下一帧执行滚动
+    requestAnimationFrame(() => {
+      chatContainer.value.scrollTo({
+        top: chatContainer.value.scrollHeight,
+        behavior: 'auto'  // 改用 'auto' 而不是 'smooth' 使滚动更流畅
+      });
+    });
   }
 };
 
-// 监听消息变化，自动滚动
+// 修改监听消息变化的代码
 watch(
   [
     () => currentChat.value.messages.length,
@@ -349,7 +351,8 @@ watch(
     () => chatStore.streamingReasoning
   ],
   () => {
-    nextTick(() => {
+    // 使用 requestAnimationFrame 代替 nextTick
+    requestAnimationFrame(() => {
       if (chatContainer.value) {
         const isNearBottom = chatContainer.value.scrollHeight - chatContainer.value.scrollTop - chatContainer.value.clientHeight < 100;
         // 如果已经接近底部或者正在加载，就自动滚动
@@ -359,7 +362,7 @@ watch(
       }
     });
   },
-  { deep: true } // 添加 deep 选项以确保捕获所有变化
+  { deep: true }
 );
 
 // 组件挂载后
