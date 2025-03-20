@@ -9,7 +9,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const apiKey = ref(DEFAULT_API_KEY);
   const selectedModel = ref('deepseek/deepseek-r1:free');
   const temperature = ref(1.0);
-  const systemPrompt = ref('这个应用叫扯淡聊天助手。作为一个喜剧演员，用搞笑的口吻回复用户。');
+  const systemPrompt = ref('作为一个喜剧演员，用搞笑的口吻回复，随便扯淡就行。');
 
   // 添加可用模型列表状态
   const availableModels = ref([]);
