@@ -85,7 +85,7 @@
         </div>
         
         <!-- 对话区域 -->
-        <div class="flex-1 p-4 overflow-y-auto" ref="chatContainer">
+        <div class="flex-1 p-4 pb-20 md:pb-4 overflow-y-auto" ref="chatContainer">
           <div v-if="currentChat.messages.length === 0" class="h-full">
             <WelcomeScreen />
           </div>
@@ -333,20 +333,33 @@ const sendMessage = async () => {
 // 滚动到底部
 const scrollToBottom = () => {
   if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+    const scrollOptions = {
+      top: chatContainer.value.scrollHeight,
+      behavior: 'smooth'
+    };
+    chatContainer.value.scrollTo(scrollOptions);
   }
 };
 
 // 监听消息变化，自动滚动
 watch(
-  () => currentChat.value.messages.length,
-  () => nextTick(() => scrollToBottom())
-);
-
-// 监听流式响应变化，自动滚动
-watch(
-  () => chatStore.streamingResponse,
-  () => nextTick(() => scrollToBottom())
+  [
+    () => currentChat.value.messages.length,
+    () => chatStore.streamingResponse,
+    () => chatStore.streamingReasoning
+  ],
+  () => {
+    nextTick(() => {
+      if (chatContainer.value) {
+        const isNearBottom = chatContainer.value.scrollHeight - chatContainer.value.scrollTop - chatContainer.value.clientHeight < 100;
+        // 如果已经接近底部或者正在加载，就自动滚动
+        if (isNearBottom || chatStore.isLoading) {
+          scrollToBottom();
+        }
+      }
+    });
+  },
+  { deep: true } // 添加 deep 选项以确保捕获所有变化
 );
 
 // 组件挂载后

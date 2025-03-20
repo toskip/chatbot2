@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="h-screen flex flex-col overflow-auto">
     <!-- 顶部导航 -->
-    <header class="bg-white shadow-sm py-4">
+    <header class="bg-white shadow-sm py-4 sticky top-0 z-30">
       <div class="container mx-auto px-4 flex justify-between items-center">
         <h1 class="text-2xl font-semibold text-apple-black">设置</h1>
         <router-link to="/" class="btn bg-transparent text-apple-blue border border-apple-blue hover:bg-apple-blue hover:text-white">
@@ -11,7 +11,7 @@
     </header>
 
     <!-- 主要内容 -->
-    <main class="flex-1 container mx-auto px-4 py-6">
+    <main class="flex-1 container mx-auto px-4 py-6 pb-20">
       <div class="max-w-3xl mx-auto">
         <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
           <h2 class="text-xl font-medium mb-4">API 设置</h2>

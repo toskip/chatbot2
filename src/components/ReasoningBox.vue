@@ -26,6 +26,7 @@
     <div 
       v-show="!isCollapsed" 
       class="p-2 bg-gray-50 text-xs font-mono overflow-auto max-h-60 whitespace-pre-wrap"
+      ref="reasoningContent"
     >
       <div v-if="content" v-html="formatMarkdown(content)"></div>
       <div v-else-if="isLoading" class="text-gray-500">AI正在思考中...</div>
@@ -35,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { marked } from 'marked';
 
 const props = defineProps({
@@ -50,11 +51,44 @@ const props = defineProps({
 });
 
 const isCollapsed = ref(false);
+const reasoningContent = ref(null);
 
 // 格式化Markdown内容
-const formatMarkdown = (content) => {
-  // 先处理换行符，确保 \n\n 被正确转换为换行
-  const processedContent = content.replace(/\\n\\n/g, '\n\n').replace(/\\n/g, '\n');
-  return marked(processedContent);
+const formatMarkdown = (text) => {
+  // 先处理换行符，确保 \n\n 和 \n 被正确转换为换行
+  const processedText = text
+    .replace(/\\n\\n/g, '\n\n')  // 处理双换行
+    .replace(/\\n/g, '\n');      // 处理单换行
+  return marked(processedText);
 };
+
+// 滚动到底部
+const scrollToBottom = () => {
+  if (reasoningContent.value) {
+    reasoningContent.value.scrollTop = reasoningContent.value.scrollHeight;
+  }
+};
+
+// 监听内容变化，自动滚动
+watch(
+  () => props.content,
+  () => {
+    if (!isCollapsed.value) {
+      // 使用 requestAnimationFrame 确保在下一帧执行滚动
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }
+  }
+);
+
+// 监听 isLoading 变化，如果开始加载就展开推理框
+watch(
+  () => props.isLoading,
+  (newVal) => {
+    if (newVal) {
+      isCollapsed.value = false;
+    }
+  }
+);
 </script> 

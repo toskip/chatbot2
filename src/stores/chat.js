@@ -134,7 +134,7 @@ export const useChatStore = defineStore('chat', () => {
         const errorData = await response.json();
         throw new Error(errorData.error?.message || '请求失败');
       }
-      
+      console.log(messages)
       // 处理流式响应
       const reader = response.body.getReader();
       responseStream.value = reader;
