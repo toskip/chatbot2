@@ -41,10 +41,10 @@ watch(() => props.details, (newDetails) => {
     isVisible.value = true;
     isClosing.value = false;
     
-    // 5秒后开始关闭动画
+    // 3秒后开始关闭动画
     timeout = setTimeout(() => {
       closeWithAnimation();
-    }, 5000);
+    }, 3000);
   }
 });
 
