@@ -4,15 +4,22 @@
 
 @layer base {
   html {
-    @apply antialiased;
+    @apply antialiased h-full overflow-hidden;
   }
   
   body {
-    @apply bg-apple-gray text-apple-black min-h-screen;
+    @apply bg-apple-gray text-apple-black h-full overflow-hidden;
   }
   
   #app {
-    @apply w-full h-full;
+    @apply w-full h-full overflow-hidden;
+  }
+}
+
+/* 添加视口高度调整，解决移动端 Safari 底部工具栏问题 */
+@supports (-webkit-touch-callout: none) {
+  .h-screen {
+    height: -webkit-fill-available;
   }
 }
 

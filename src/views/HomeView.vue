@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="h-screen flex flex-col">
     <!-- 顶部导航 -->
-    <header class="bg-white shadow-sm py-4">
+    <header class="bg-white shadow-sm py-4 sticky top-0 z-30">
       <div class="container mx-auto px-4 flex justify-between items-center">
         <div class="flex items-center">
           <button 
@@ -19,7 +19,7 @@
     </header>
 
     <!-- 主要内容 -->
-    <main class="flex-1 container mx-auto px-4 py-6 flex gap-4 relative">
+    <main class="flex-1 container mx-auto px-4 py-6 flex gap-4 relative overflow-hidden h-[calc(100%-4rem)]">
       <!-- 移动设备侧边栏背景遮罩 -->
       <div 
         v-if="showSidebar" 
@@ -29,7 +29,7 @@
       
       <!-- 侧边栏：对话历史 -->
       <aside 
-        class="w-64 bg-white rounded-2xl p-4 shadow-md h-[calc(100vh-8rem)] z-20 transition-all duration-300"
+        class="w-64 bg-white rounded-2xl p-4 shadow-md h-[calc(100vh-8rem)] z-20 transition-all duration-300 overflow-hidden"
         :class="{ 
           'fixed left-4 top-20': !isDesktop, 
           '-translate-x-full md:translate-x-0': !showSidebar && !isDesktop,
@@ -71,7 +71,7 @@
       </aside>
 
       <!-- 主聊天区域 -->
-      <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-md h-[calc(100vh-8rem)] overflow-hidden">
+      <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-md overflow-hidden">
         <!-- 对话区域顶部工具栏 -->
         <div class="border-b p-2 flex justify-end">
           <button 
@@ -189,8 +189,8 @@
         </div>
         
         <!-- 输入区域 -->
-        <div class="border-t p-4">
-          <div class="flex gap-2 items-end">
+        <div class="border-t p-4 bg-white md:relative md:bottom-auto fixed bottom-0 left-0 right-0">
+          <div class="flex gap-2 items-end max-w-[calc(100%-2rem)] mx-auto">
             <textarea 
               v-model="userInput" 
               class="input resize-none h-12 transition-all duration-200"
