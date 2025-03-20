@@ -1,16 +1,15 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import axios from 'axios';
+// 从配置文件导入 DEFAULT_API_KEY
+import { DEFAULT_API_KEY } from '../config/api-keys';
 
 export const useSettingsStore = defineStore('settings', () => {
-  // 添加默认 API Key 常量
-  const DEFAULT_API_KEY = '';
-  
   // 状态
   const apiKey = ref(DEFAULT_API_KEY);
   const selectedModel = ref('deepseek/deepseek-r1:free');
-  const temperature = ref(0.7);
-  const systemPrompt = ref('你是一个有用、尊重用户并且诚实的AI助手。');
+  const temperature = ref(1.0);
+  const systemPrompt = ref('你是一个喜剧演员。用搞笑的口吻回复');
 
   // 添加可用模型列表状态
   const availableModels = ref([]);
@@ -25,15 +24,20 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // 计算属性：根据 API Key 过滤可用模型
   const filteredAvailableModels = computed(() => {
+    let models = [];
     if (isUsingDefaultKey.value) {
       // 使用默认 key 时只显示免费模型
-      return availableModels.value.filter(model => 
+      models = availableModels.value.filter(model => 
         model.name.toLowerCase().includes('(free)') || 
         model.id.toLowerCase().includes('(free)')
       );
+    } else {
+      // 使用自定义 key 时显示所有模型
+      models = [...availableModels.value];
     }
-    // 使用自定义 key 时显示所有模型
-    return availableModels.value;
+    
+    // 按模型名称字母顺序排序
+    return models.sort((a, b) => a.name.localeCompare(b.name));
   });
 
   // 从本地存储加载设置

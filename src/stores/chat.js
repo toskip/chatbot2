@@ -12,6 +12,7 @@ export const useChatStore = defineStore('chat', () => {
   const currentChatIndex = ref(0);
   const isLoading = ref(false);
   const streamingResponse = ref('');
+  const streamingReasoning = ref('');
   const responseStream = ref(null);
   const tokenDetails = ref('');
   
@@ -91,6 +92,7 @@ export const useChatStore = defineStore('chat', () => {
     
     // 清空流式响应
     streamingResponse.value = '';
+    streamingReasoning.value = '';
     tokenDetails.value = '';
     isLoading.value = true;
     
@@ -121,7 +123,10 @@ export const useChatStore = defineStore('chat', () => {
           stream: true,
           frequency_penalty: 0,
           presence_penalty: 0,
-          max_tokens: 4000
+          max_tokens: 4000,
+          reasoning: {
+            exclude:false
+          }
         })
       });
       
@@ -134,6 +139,7 @@ export const useChatStore = defineStore('chat', () => {
       const reader = response.body.getReader();
       responseStream.value = reader;
       
+      let reasoningResponse = '';
       let fullResponse = '';
       let done = false;
       
@@ -161,8 +167,14 @@ export const useChatStore = defineStore('chat', () => {
               }
               
               // 获取生成的内容
+              const reasoning = parsedData.choices[0]?.delta?.reasoning || '';
               const content = parsedData.choices[0]?.delta?.content || '';
-              if (content) {
+              if(reasoning) {
+                reasoningResponse += reasoning;
+                streamingReasoning.value = reasoningResponse;
+                //console.log(reasoningResponse);
+              }
+              else if (content) {
                 fullResponse += content;
                 streamingResponse.value = fullResponse;
               }
@@ -173,10 +185,11 @@ export const useChatStore = defineStore('chat', () => {
         }
       }
       
-      // 添加完整响应到聊天历史
+      // 添加完整响应到聊天历史，包含推理内容
       addMessage({
         role: 'assistant',
-        content: fullResponse
+        content: fullResponse,
+        reasoning: reasoningResponse
       });
       
     } catch (error) {
@@ -187,6 +200,7 @@ export const useChatStore = defineStore('chat', () => {
       });
     } finally {
       streamingResponse.value = '';
+      streamingReasoning.value = '';
       isLoading.value = false;
       responseStream.value = null;
     }
@@ -205,6 +219,7 @@ export const useChatStore = defineStore('chat', () => {
     currentChatIndex,
     isLoading,
     streamingResponse,
+    streamingReasoning,
     tokenDetails,
     createNewChat,
     setCurrentChat,

@@ -72,6 +72,18 @@
 
       <!-- 主聊天区域 -->
       <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-md h-[calc(100vh-8rem)] overflow-hidden">
+        <!-- 对话区域顶部工具栏 -->
+        <div class="border-b p-2 flex justify-end">
+          <button 
+            class="text-apple-blue hover:bg-gray-100 p-1.5 rounded-md flex items-center text-sm"
+            @click="toggleContextViewer"
+            title="导出聊天记录"
+          >
+            <DocumentTextIcon class="h-4 w-4 mr-1" />
+            <span>导出记录</span>
+          </button>
+        </div>
+        
         <!-- 对话区域 -->
         <div class="flex-1 p-4 overflow-y-auto" ref="chatContainer">
           <div v-if="currentChat.messages.length === 0" class="h-full">
@@ -114,7 +126,15 @@
                 </button>
                 
                 <!-- 正常显示消息内容 -->
-                <div v-if="editingMessageIndex !== idx" v-html="formatMessage(message.content)"></div>
+                <div v-if="editingMessageIndex !== idx">
+                  <!-- 显示推理内容 - 移到内容上方 -->
+                  <ReasoningBox 
+                    v-if="message.role === 'assistant' && message.reasoning" 
+                    :content="message.reasoning" 
+                    :isLoading="false" 
+                  />
+                  <div v-html="formatMessage(message.content)"></div>
+                </div>
                 
                 <!-- 编辑消息表单 -->
                 <div v-else class="flex flex-col gap-2">
@@ -143,10 +163,22 @@
             </div>
             
             <!-- 显示正在流式输出的响应 -->
-            <div v-if="chatStore.isLoading && chatStore.streamingResponse" class="flex justify-start gap-4">
+            <div v-if="chatStore.isLoading" class="flex justify-start gap-4">
               <div class="max-w-3xl rounded-2xl p-4 bg-gray-100 text-apple-black">
-                <div v-html="formatMessage(chatStore.streamingResponse)"></div>
-                <div class="mt-2 flex items-center">
+                <!-- 显示推理内容 -->
+                <ReasoningBox 
+                  v-if="chatStore.streamingReasoning || !chatStore.streamingResponse" 
+                  :content="chatStore.streamingReasoning" 
+                  :isLoading="chatStore.isLoading" 
+                />
+                
+                <!-- 显示实际响应内容 -->
+                <div v-if="chatStore.streamingResponse" class="mt-2">
+                  <div v-html="formatMessage(chatStore.streamingResponse)"></div>
+                </div>
+                
+                <!-- 如果没有响应内容，显示加载动画 -->
+                <div v-if="!chatStore.streamingResponse && !chatStore.streamingReasoning" class="mt-2 flex items-center">
                   <span class="inline-block h-2 w-2 rounded-full bg-apple-blue animate-pulse mr-1"></span>
                   <span class="inline-block h-2 w-2 rounded-full bg-apple-blue animate-pulse mr-1" style="animation-delay: 0.2s"></span>
                   <span class="inline-block h-2 w-2 rounded-full bg-apple-blue animate-pulse" style="animation-delay: 0.4s"></span>
@@ -158,16 +190,19 @@
         
         <!-- 输入区域 -->
         <div class="border-t p-4">
-          <div class="flex gap-2">
+          <div class="flex gap-2 items-end">
             <textarea 
               v-model="userInput" 
-              class="input resize-none h-12"
+              class="input resize-none h-12 transition-all duration-200"
+              :style="textareaStyle"
               placeholder="输入消息..."
-              @keydown.enter.prevent="sendMessage"
+              @keydown.enter="handleEnterKey"
+              @input="adjustTextareaHeight"
+              ref="inputTextarea"
               :disabled="chatStore.isLoading"
             ></textarea>
             <button 
-              class="btn" 
+              class="btn h-12 flex-shrink-0" 
               @click="sendMessage" 
               :disabled="chatStore.isLoading"
               :class="{ 'opacity-50 cursor-not-allowed': chatStore.isLoading }"
@@ -184,6 +219,33 @@
       :details="chatStore.tokenDetails" 
       @close="chatStore.tokenDetails = ''" 
     />
+
+    <!-- 添加记录查看器模态框 -->
+    <div v-if="showContextViewer" class="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[80vh] flex flex-col">
+        <div class="p-4 border-b flex justify-between items-center">
+          <h3 class="text-lg font-medium">聊天记录</h3>
+          <div class="flex gap-2">
+            <button 
+              class="p-1.5 rounded-md hover:bg-gray-100 text-gray-500"
+              @click="copyContextToClipboard"
+              title="复制到剪贴板"
+            >
+              <ClipboardDocumentIcon class="h-5 w-5" />
+            </button>
+            <button 
+              class="p-1.5 rounded-md hover:bg-gray-100 text-gray-500"
+              @click="toggleContextViewer"
+            >
+              <XMarkIcon class="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+        <div class="p-4 overflow-y-auto flex-1">
+          <pre class="text-xs font-mono bg-gray-50 p-4 rounded-md overflow-x-auto whitespace-pre-wrap">{{ formattedContext }}</pre>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -199,10 +261,13 @@ import {
   Bars3Icon,
   XMarkIcon,
   PencilIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  DocumentTextIcon,
+  ClipboardDocumentIcon
 } from '@heroicons/vue/24/outline';
 import TokenDetails from '../components/TokenDetails.vue';
 import WelcomeScreen from '../components/WelcomeScreen.vue';
+import ReasoningBox from '../components/ReasoningBox.vue';
 
 // 状态管理
 const chatStore = useChatStore();
@@ -352,4 +417,85 @@ const regenerateResponse = async () => {
   // 重新发送最后一条用户消息
   await chatStore.sendMessageToLLM(currentChat.value.messages[lastUserMessageIndex.index].content);
 };
+
+// 添加处理Enter键的方法
+const handleEnterKey = (e) => {
+  // 如果按下Shift+Enter，则允许换行
+  if (e.shiftKey) {
+    return;
+  }
+  // 否则阻止默认行为并发送消息
+  e.preventDefault();
+  sendMessage();
+};
+
+// 添加记录查看器相关状态
+const showContextViewer = ref(false);
+
+// 格式化记录数据
+const formattedContext = computed(() => {
+  if (chatStore.chatHistory.length === 0) {
+    return '{}';
+  }
+  
+  const contextData = {
+    systemPrompt: chatStore.getCurrentSystemPrompt,
+    messages: currentChat.value.messages
+  };
+  
+  return JSON.stringify(contextData, null, 2);
+});
+
+// 切换记录查看器显示/隐藏
+const toggleContextViewer = () => {
+  showContextViewer.value = !showContextViewer.value;
+};
+
+// 复制记录到剪贴板
+const copyContextToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(formattedContext.value);
+    alert('已复制到剪贴板');
+  } catch (err) {
+    console.error('复制失败:', err);
+    alert('复制失败，请手动复制');
+  }
+};
+
+// 添加输入框引用
+const inputTextarea = ref(null);
+
+// 添加计算样式
+const textareaStyle = computed(() => {
+  // 只有当内容包含换行符时才改变高度
+  if (userInput.value.includes('\n')) {
+    return {
+      height: inputTextarea.value ? `${Math.min(inputTextarea.value.scrollHeight, 160)}px` : '48px'
+    };
+  }
+  return {}; // 默认高度
+});
+
+// 修改调整高度的方法
+const adjustTextareaHeight = () => {
+  if (!inputTextarea.value || !userInput.value.includes('\n')) {
+    // 如果没有换行，重置为默认高度
+    inputTextarea.value.style.height = '48px';
+    return;
+  }
+  
+  // 重置高度，以便正确计算
+  inputTextarea.value.style.height = 'auto';
+  
+  // 计算新高度，但限制最大高度
+  const newHeight = Math.min(inputTextarea.value.scrollHeight, 160);
+  
+  // 设置新高度
+  inputTextarea.value.style.height = `${newHeight}px`;
+};
+
+// 监听用户输入变化，调整高度
+watch(userInput, () => {
+  nextTick(() => adjustTextareaHeight());
+});
 </script> 
