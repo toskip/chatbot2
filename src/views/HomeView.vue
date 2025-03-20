@@ -29,7 +29,7 @@
       
       <!-- 侧边栏：对话历史 -->
       <aside 
-        class="w-64 bg-white rounded-2xl p-4 shadow-md h-[calc(100vh-8rem)] z-20 transition-all duration-300"
+        class="w-64 bg-white rounded-2xl p-4 shadow-md z-20 transition-all duration-300"
         :class="{ 
           'fixed left-4 top-20': !isDesktop, 
           '-translate-x-full md:translate-x-0': !showSidebar && !isDesktop,
@@ -71,7 +71,7 @@
       </aside>
 
       <!-- 主聊天区域 -->
-      <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-md h-[calc(100vh-8rem)] overflow-hidden">
+      <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-md overflow-hidden">
         <!-- 对话区域顶部工具栏 -->
         <div class="border-b p-2 flex justify-end">
           <button 
@@ -85,7 +85,11 @@
         </div>
         
         <!-- 对话区域 -->
-        <div class="flex-1 p-4 overflow-y-auto" ref="chatContainer">
+        <div 
+          class="flex-1 p-4 overflow-y-auto" 
+          ref="chatContainer"
+          :class="{'pb-safe': isMobile}"
+        >
           <div v-if="currentChat.messages.length === 0" class="h-full">
             <WelcomeScreen />
           </div>
@@ -189,7 +193,7 @@
         </div>
         
         <!-- 输入区域 -->
-        <div class="border-t p-4">
+        <div class="border-t p-4" :class="{'pb-safe': isMobile}">
           <div class="flex gap-2 items-end">
             <textarea 
               v-model="userInput" 
@@ -281,6 +285,26 @@ const userInput = ref('');
 // 移动设备侧边栏状态
 const showSidebar = ref(false);
 const isDesktop = ref(window.innerWidth >= 768);
+const isMobile = ref(false);
+
+// 检测是否为移动设备
+const checkMobileDevice = () => {
+  // 检查是否为iOS设备
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  // 检查是否为移动设备（包括Android）
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  isMobile.value = isIOS || isMobileDevice;
+};
+
+// 窗口大小变化处理
+const handleResize = () => {
+  isDesktop.value = window.innerWidth >= 768;
+  if (isDesktop.value) {
+    showSidebar.value = true;
+  }
+  checkMobileDevice();
+};
 
 // 当前聊天
 const currentChat = computed(() => {
@@ -293,14 +317,6 @@ const currentChat = computed(() => {
 // 切换侧边栏显示/隐藏
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value;
-};
-
-// 窗口大小变化处理
-const handleResize = () => {
-  isDesktop.value = window.innerWidth >= 768;
-  if (isDesktop.value) {
-    showSidebar.value = true;
-  }
 };
 
 // 格式化消息内容（Markdown）
@@ -361,6 +377,9 @@ onMounted(() => {
   
   // 初始化响应式设置
   handleResize();
+  
+  // 检测移动设备
+  checkMobileDevice();
 });
 
 // 组件卸载前
